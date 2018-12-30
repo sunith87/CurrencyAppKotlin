@@ -1,10 +1,9 @@
 package com.currencyapp.viewModel
 
 import android.app.Application
-import android.arch.lifecycle.AndroidViewModel
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
+import android.arch.lifecycle.*
 import com.currencyapp.data.RateProvider
+import com.currencyapp.model.CurrencyData
 import com.currencyapp.model.CurrencyRate
 import kotlinx.coroutines.*
 
@@ -14,31 +13,39 @@ class RatesViewModel(val app: Application) : AndroidViewModel(app) {
         private val DELAY = 1000L
     }
 
-    val responseLiveData: MutableLiveData<List<CurrencyRate>> = MutableLiveData()
+    val responseLiveData: MutableLiveData<CurrencyData> = MutableLiveData()
     val rateProvider: RateProvider = RateProvider()
     private var observeJob: Job? = null
 
-    fun observe(): LiveData<List<CurrencyRate>> {
-        if (observeJob != null) {
-            cancel()
-        }
+    fun observe(): LiveData<CurrencyData> {
+        startFetch()
+        return responseLiveData
+    }
+
+    private fun startFetch() {
         observeJob = CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 doFetch()
                 delay(DELAY)
             }
         }
-        return responseLiveData
+
+        observeJob?.invokeOnCompletion { _ -> observeJob = null }
     }
 
-    private suspend fun doFetch() {
+    private fun doFetch() {
         val responseData = rateProvider.fetch()
-        val list: List<CurrencyRate> = responseData.rates.map { entry -> CurrencyRate(entry.key, entry.value) }
-        responseLiveData.postValue(list)
+        if (responseData.rates.isNotEmpty()) {
+            val list: List<CurrencyRate> = responseData.rates.map { entry -> CurrencyRate(entry.key, entry.value) }
+            responseLiveData.postValue(CurrencyData.data(list))
+        } else {
+            responseData.error?.let {
+                responseLiveData.postValue(CurrencyData.error(it))
+            }
+        }
     }
 
     fun cancel() {
-        rateProvider.cancel()
         observeJob?.cancel()
     }
 }

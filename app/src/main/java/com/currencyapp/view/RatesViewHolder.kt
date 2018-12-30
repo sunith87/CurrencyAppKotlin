@@ -11,19 +11,15 @@ class RatesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private var name: TextView? = null
     private var rate: TextView? = null
 
-    fun bind(rates: CurrencyRate, currentInputValue: Float) {
+    fun bind(rates: CurrencyRate, currentInputValue: Float, focusChangeListener: View.OnFocusChangeListener?) {
         name = itemView.findViewById(R.id.txtCurrencyName)
         rate = itemView.findViewById(R.id.etCurrencyValue)
 
         name?.text = rates.name
         val totalValue: Float = rates.rate * currentInputValue
         rate?.text = totalValue.toString()
-
-        rate?.onFocusChangeListener =
-            View.OnFocusChangeListener { v, hasFocus ->
-                run {
-                    Log.d("TEST", "has Focus? ${hasFocus}")
-                }
-            }
+        focusChangeListener?.let {
+            rate?.onFocusChangeListener = it
+        }
     }
 }
