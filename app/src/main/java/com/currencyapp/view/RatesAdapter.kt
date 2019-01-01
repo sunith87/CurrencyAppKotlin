@@ -2,28 +2,47 @@ package com.currencyapp.view
 
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import com.currencyapp.R
 import com.currencyapp.model.CurrencyRate
 
 class RatesAdapter : RecyclerView.Adapter<RatesViewHolder>() {
 
-    private var rates: List<CurrencyRate>? = ArrayList()
-
-    fun setRates(rates: List<CurrencyRate>?, hasFocus: Boolean) {
-        rates?.let {
-            this.rates = it
+    var rates: MutableList<CurrencyRate>? = ArrayList()
+        set(value) {
             when (hasFocus) {
-                false -> notifyDataSetChanged()
+                false -> {
+                    if (field != null && field!!.isEmpty()) {
+                        field = value
+                    } else {
+                        field = keepOrderOfListAndMutate(field, value)
+                    }
+                    notifyDataSetChanged()
+                }
             }
         }
+
+    private fun keepOrderOfListAndMutate(
+        cachedRates: MutableList<CurrencyRate>?,
+        newRates: MutableList<CurrencyRate>?
+    ): MutableList<CurrencyRate> {
+        val mutatedRates: MutableList<CurrencyRate> = ArrayList()
+        cachedRates?.mapIndexed() { index, cachedRate ->
+            val found = newRates?.find { currencyRate -> cachedRate.name.equals(currencyRate.name) }
+            found?.let { mutatedRates.add(index, it) }
+        }
+        return mutatedRates
     }
 
-    var focusChangeListener: View.OnFocusChangeListener? = null
-        set(listener) {
-            field = listener
+    var hasFocus: Boolean = false
+        set(value) {
+            field = value
         }
+    var rateChangeView: RateChangeView? = null
+        set(rateChangeView) {
+            field = rateChangeView
+        }
+    var newValue: Double = 1.0
 
     override fun getItemCount(): Int {
         return rates?.size ?: 0
@@ -31,7 +50,7 @@ class RatesAdapter : RecyclerView.Adapter<RatesViewHolder>() {
 
     override fun onBindViewHolder(ratesViewHolder: RatesViewHolder, position: Int) {
         rates?.let {
-            ratesViewHolder.bind(it.get(position), 1F, focusChangeListener!!)
+            ratesViewHolder.bind(it.get(position), newValue, rateChangeView)
         }
     }
 
@@ -41,4 +60,17 @@ class RatesAdapter : RecyclerView.Adapter<RatesViewHolder>() {
         return RatesViewHolder(inflatedView)
     }
 
+    fun setNewValueAndRate(newValue: Double, currencyRate: CurrencyRate) {
+        this.newValue = newValue
+        when (hasFocus) {
+            false -> {
+                val indexOf = rates?.indexOf(currencyRate)
+                indexOf?.let {
+                    rates?.removeAt(indexOf)
+                    rates?.add(0, currencyRate)
+                    notifyItemMoved(it, 0)
+                }
+            }
+        }
+    }
 }

@@ -1,25 +1,27 @@
 package com.currencyapp.view
 
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.View
 import android.widget.TextView
 import com.currencyapp.R
 import com.currencyapp.model.CurrencyRate
+import java.text.DecimalFormat
 
 class RatesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    private var name: TextView? = null
-    private var rate: TextView? = null
+    private val nameView: TextView? = itemView.findViewById(R.id.txtCurrencyName)
+    private val rateView: TextView? = itemView.findViewById(R.id.etCurrencyValue)
+    private val rateFormat = DecimalFormat("#.00")
 
-    fun bind(rates: CurrencyRate, currentInputValue: Float, focusChangeListener: View.OnFocusChangeListener?) {
-        name = itemView.findViewById(R.id.txtCurrencyName)
-        rate = itemView.findViewById(R.id.etCurrencyValue)
-
-        name?.text = rates.name
-        val totalValue: Float = rates.rate * currentInputValue
-        rate?.text = totalValue.toString()
-        focusChangeListener?.let {
-            rate?.onFocusChangeListener = it
-        }
+    fun bind(
+        rates: CurrencyRate,
+        currentInputValue: Double,
+        rateChangeView: RateChangeView?
+    ) {
+        nameView?.text = rates.name
+        rateView?.text = rateFormat.format(rates.rate * currentInputValue)
+        val rateChangePresenter = RateChangePresenter(rateChangeView!!, rates)
+        rateView?.onFocusChangeListener = rateChangePresenter
+        rateView?.setOnEditorActionListener(rateChangePresenter)
+        rateView?.addTextChangedListener(rateChangePresenter)
     }
 }
