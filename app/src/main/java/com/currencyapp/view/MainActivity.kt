@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity(), RateChangeView {
     override fun newCurrencyInputValue(newValue: Double, currencyRate: CurrencyRate) {
         currencyList?.clearFocus()
         ratesAdapter?.setNewValueAndRate(newValue, currencyRate)
-        handler.postDelayed({ currencyList?.layoutManager?.scrollToPosition(0) }, 1000)
+        handler.post({ currencyList?.layoutManager?.scrollToPosition(0) })
 
     }
 }

@@ -4,9 +4,7 @@ import android.os.Handler
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
-import android.view.KeyEvent
 import android.view.View
-import android.widget.TextView
 import com.currencyapp.model.CurrencyRate
 
 interface RateChangeView {
@@ -20,37 +18,34 @@ class RateChangePresenter(
     val currencyRate: CurrencyRate
 ) :
     View.OnFocusChangeListener,
-    TextView.OnEditorActionListener, TextWatcher {
+    TextWatcher {
 
     private var hasFocus: Boolean = false
-    private var handler:Handler = Handler()
+    private var handler: Handler = Handler()
+    private var newValue: Double? = null
+    private var runnable: Runnable = Runnable {
+        newValue?.let {
+            Log.d("TEST", "afterTextChanged newValue - $newValue")
+            rateChangeView?.newCurrencyInputValue(it, currencyRate)
+        }
+    }
 
     override fun onFocusChange(v: View?, hasFocus: Boolean) {
         this.hasFocus = hasFocus
         rateChangeView?.setFocus(hasFocus)
     }
 
-    override fun onEditorAction(editText: TextView?, id: Int, event: KeyEvent?): Boolean {
-        if ((event?.getAction() == KeyEvent.ACTION_DOWN)
-        ) {
-            rateChangeView?.hideKeyboard()
-            return true
-        }
-
-        return false
-    }
-
     override fun afterTextChanged(s: Editable?) {
         Log.d("TEST", "afterTextChanged - ${s.toString()}")
         if (hasFocus) {
-            val newValue = s.toString().toDouble() / currencyRate.rate
-            Log.d("TEST", "afterTextChanged newValue - $newValue")
-            rateChangeView?.newCurrencyInputValue(newValue, currencyRate)
+            newValue = s.toString().toDouble() / currencyRate.rate
+            handler.postDelayed(runnable, 1000)
         }
     }
 
     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
         Log.d("TEST", "beforeTextChanged - ${s.toString()}")
+        handler.removeCallbacks(runnable)
     }
 
     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {

@@ -21,7 +21,6 @@ class RatesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         rateView?.text = rateFormat.format(rates.rate * currentInputValue)
         val rateChangePresenter = RateChangePresenter(rateChangeView!!, rates)
         rateView?.onFocusChangeListener = rateChangePresenter
-        rateView?.setOnEditorActionListener(rateChangePresenter)
         rateView?.addTextChangedListener(rateChangePresenter)
     }
 }
